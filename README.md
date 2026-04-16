@@ -1,9 +1,4 @@
-# Data Cleaning & Enrichment Tool — V3
-
-A Streamlit app that cleans, validates, and enriches a CSV of entity names and URLs. It validates URLs, fuzzy-matches names to domains, and generates mention rules and entity descriptions for news-matching pipelines. Non-Latin entity names (Cyrillic, Arabic, CJK, etc.) are skipped automatically.
-
----
-
+# ConceptOps tool — V3
 ## What it does
 
 1. **Name cleaning** — strips leading numeric/alphanumeric codes, collapses dotted corporate abbreviations (S.L. → SL), removes business suffixes (Inc, LLC, Ltd, SL, SA, GmbH…), normalizes to Title Case
