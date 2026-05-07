@@ -1,6 +1,6 @@
-# Data Cleaning & Enrichment Tool — V4
+# ConceptOps Tool — V4
 
-Streamlit app for cleaning, validating, and enriching CSV entity data with AI-powered mention rules and descriptions.
+A Streamlit app for data cleaning, validation, and the creation of entity descriptions and rules, powered by AI.
 
 ## Features
 
@@ -9,9 +9,22 @@ Streamlit app for cleaning, validating, and enriching CSV entity data with AI-po
 - **Entity research** — scrapes `/about` pages and runs targeted Google searches via Serper.dev
 - **AI rule generation** — Claude Haiku produces up to 5 mention rules + entity descriptions
 - **Confidence gating** — suppresses low-confidence or ambiguous rules (prevents false positives)
-- **Division & ambiguity detection** — flags parent companies and shared-name entities
-- **Non-Latin filtering** — automatically excludes Cyrillic, Arabic, CJK names
+- **Ambiguity detection** — flags parent companies and shared-name entities
+-
 - **Anti-blocking** — User-Agent rotation, request throttling, optional proxy support
+
+  ## Pipeline Steps
+
+1. **Validate URL** — 2-layer HTTP check (3s HEAD, 10s GET retry)
+2. **Deduplication** - to avoid duplicate API Calls-
+3. **Non-Latin filtering** — automatically excludes Cyrillic, Arabic, CJK names
+4. **Name Normalization** — remove codes, suffixes, abbreviations, geographic qualifiers
+5. **Extract base name** — strip geographic qualifiers for variant matching
+6. **Scrape `/about`** — extract title, meta description, H1, body text
+7. **Google search** — 3–5 targeted Serper queries
+8. **Claude Haiku - AI rule generation** — generate rules + description
+9.   **Confidence gatin** — suppress if confidence <= 75 or ambiguity is detected
+10. **Output** — categorize into OK / Needs Revision / Incorrect
 
 ## Requirements
 
@@ -26,10 +39,9 @@ pip install -r requirements.txt
 ```
 
 Create `.env` file in project root:
-
-```env
-ANTHROPIC_API_KEY=your_key_here
-SERPER_API_KEY=your_key_here
+  ```env
+  ANTHROPIC_API_KEY=your_key_here
+  SERPER_API_KEY=your_key_here
 
 # Optional: IP rotation via proxies
 # PROXY_LIST=http://user:pass@host1:8080,http://user:pass@host2:8080
@@ -67,30 +79,10 @@ Key output columns:
 - `Rule 1–5` — mention rules for news matching
 - `Rule Type 1–5` — "rule" (high-confidence) or "alias" (manual verification needed)
 - `Entity Description` — 2–3 sentence summary
-- `Confidence` — Claude's self-assessed score (0–100)
-- `Ambiguity Flag` — true if division/shared-name risk detected
-- `Has Divisions` — parent company with named sub-divisions
-- `Needs Manual Revision` — true if rules suppressed by confidence gate
+- `Rules Evidence` — combined note and supporting evidence snippets
+- `Ambiguity Flag` — true when an entity is ambiguous or a parent/division risk
+- `Needs Manual Revision` — true if rules were suppressed
 - `Website Status` — OK / Broken / Need revision / Social media
-
-## Confidence Gating
-
-Rules are suppressed if:
-- Confidence < 70 (or 85 for division-risk names)
-- Ambiguity flag detected
-- Rule is too broad (e.g., first word only of multi-word entity)
-- Name contains known ambiguous tokens
-
-## Pipeline Steps
-
-1. **Validate URL** — 2-layer HTTP check (3s HEAD, 10s GET retry)
-2. **Clean name** — remove codes, suffixes, abbreviations
-3. **Extract base name** — strip geographic qualifiers for variant matching
-4. **Scrape `/about`** — extract title, meta description, H1, body text
-5. **Google search** — 3–5 targeted Serper queries
-6. **Claude Haiku** — generate rules + description + confidence score
-7. **Gate rules** — suppress if confidence low or ambiguity detected
-8. **Output** — categorize into OK / Needs Revision / Incorrect
 
 ## Caching
 
@@ -99,11 +91,6 @@ In-memory caches per session (reset on each app restart):
 - `base_name_cache` — by base name (shared across variants)
 - `about_cache` — by root domain (avoids re-scraping)
 - `search_cache` — by query string
-
-## Sidebar Controls
-
-- **Standard confidence threshold** (default: 70) — gate for standard entities
-- **Group / holdings threshold** (default: 85) — higher bar for division-risk names
 
 ## Anti-blocking Measures
 
